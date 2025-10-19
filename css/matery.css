@@ -33,6 +33,7 @@
     }
 }
 
+
 body {
     background-color: #eaeaea;
     margin: 0;
@@ -106,7 +107,7 @@ pre {
     tab-size: 4;
 }
 
-.code-area::after {
+/* .code-area::after {
     content: " ";
     position: absolute;
     border-radius: 50%;
@@ -118,7 +119,7 @@ pre {
     margin-top: 12px;
     -webkit-box-shadow: 20px 0 #ffbd2e, 40px 0 #27c93f;
     box-shadow: 20px 0 #ffbd2e, 40px 0 #27c93f;
-}
+} */
 
 code {
     padding: 1px 5px;
@@ -2294,3 +2295,124 @@ body.DarkMode .theme-btn:hover {
     font-weight: 900;
     color: #d9534f;
 }
+
+/* ===== Matery 文章页布局微调：目录更靠左、两列更紧 ===== */
+:root{
+    --toc-width:   150px;    /* 目录列宽：220~280 自行微调 */
+    --content-max: 1200px;   /* 正文最大宽度 */
+    --wrap-max:    1560px;   /* 容器最大宽度：需 ≥ toc + content + gap */
+    --col-gap:        0px;   /* 🔻 两列间距，从 28px 减到 8px */
+    --sticky-top:    120px;  /* 目录吸顶距离 */
+    --toc-shift:     -72px;  /* 🔻 目录整体向页面左贴；-32~-64 之间试 */
+  }
+  
+  /* 目录吸顶 */
+  .toc-sticky{
+    position: sticky;
+    top: var(--sticky-top);
+    max-height: calc(100vh - (var(--sticky-top) + 60px));
+    overflow: auto;
+  }
+  #toc-content{ max-height: inherit; overflow: auto; }
+  #toc-content .toc-link{ white-space: normal; line-height: 1.6; }
+  
+  /* 标题滚动留空 */
+  #articleContent h1,#articleContent h2,#articleContent h3,
+  #articleContent h4,#articleContent h5,#articleContent h6{ scroll-margin-top: 96px; }
+  
+  /* 移动端隐藏目录 */
+  @media (max-width: 992px){
+    #artDetail.post-row{ display: block !important; }
+    #artDetail > aside{ display: none !important; }
+  }
+  
+  /* 大屏两列布局：整体居中，正文在自身列里保持居左 */
+  @media (min-width: 1200px){
+    #artDetail.post-row{
+      display: grid !important;
+      grid-template-columns: var(--toc-width) minmax(0, var(--content-max));
+      justify-content: center;
+      column-gap: var(--col-gap);                 /* 🔻间距更小 */
+    }
+    /* 去掉主题自带的列内边距（就是那条“灰沟”） */
+    #toc-aside, #main-content{
+      width: auto !important; flex: none !important;
+      padding-left: 0 !important; padding-right: 0 !important; /* 🔻 */
+    }
+  
+    /* 目录更贴左（适度负外边距即可） */
+    #toc-aside{ margin-left: var(--toc-shift); align-self: start; }
+  
+    /* 正文在自己的列里“居左”展开 */
+    #main-content .card{ max-width: var(--content-max); margin: 0; }
+  }
+  
+  /* 容器放大以容纳两列 */
+  @media (min-width: 993px){
+    .container, .post-container{ max-width: var(--wrap-max) !important; }
+  }
+  @media (min-width: 1418px){
+    .container, .post-container{ max-width: var(--wrap-max) !important; }
+  }
+  
+  /* 隐藏内嵌 TOC */
+  .vscode-markdown-toc, .markdown-toc{ display: none !important; }
+  
+  /* 文章整体位置 */
+  #artDetail{ margin-top: 0 !important; }
+  
+  /* 让正文再向左一点 */
+:root{
+    --content-pull: -600px;   /* 负值=向左。可改 -24/-32/-64… */
+    --gap-safe: 8px;         /* 目录与正文最小安全间距 */
+  }
+  
+  @media (min-width: 1200px){
+    /* 正文整体左移 */
+    #main-content{
+      margin-left: var(--content-pull) !important;
+    }
+    /* 给目录右侧加一点内边距，避免贴得过狠 */
+    #toc-aside{
+      padding-right: var(--gap-safe) !important;
+    }
+  }
+
+/* 目录编号更清晰：放到容器内、加深颜色、保留一点左内边距 */
+#toc-content ol{
+    list-style: decimal;
+    list-style-position: inside;   /* 核心：编号进入内容框，不会被负外边距挤掉 */
+    margin: 0;
+    padding-left: .4rem;           /* 给编号留出小空间，防止贴边 */
+  }
+  #toc-content ol li{
+    color: #444;                    /* 目录文字颜色更深一点 */
+    line-height: 1.6;
+  }
+  #toc-content ol li::marker{
+    color: #333;                    /* 编号颜色更深、更清晰 */
+    font-weight: 600;
+  }
+  
+  /* —— 去掉复制/提示/展开/语言标签 —— */
+.code_copy,
+.codecopy_notice,
+.code-expand,
+.code_lang {
+  display: none !important;
+}
+
+/* 一些主题/插件可能用到的工具条类名，顺手隐藏 */
+.code-toolbar .toolbar,
+.highlight-tools {
+  display: none !important;
+}
+
+/* 代码块顶部原本给按钮留了较大 padding，这里收紧 */
+pre {
+  /* 原来是：padding: 2rem 1rem 1rem 3rem !important; */
+  padding: 1rem 1rem 1rem 1.25rem !important;
+}
+
+/* 若还启用了“红黄绿三点”的伪元素，务必禁用（你之前已注释，保持这样） */
+/* .code-area::after { display: none !important; } */
