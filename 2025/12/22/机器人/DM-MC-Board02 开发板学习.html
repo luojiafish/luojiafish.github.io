@@ -1,0 +1,32 @@
+<h1 id="DM-MC-Board-02-开发板学习"><a href="#DM-MC-Board-02-开发板学习" class="headerlink" title="DM-MC-Board 02 开发板学习"></a>DM-MC-Board 02 开发板学习</h1><p><a href="https://space.bilibili.com/618189554/upload/video">达妙科技-dmbot投稿视频-达妙科技-dmbot视频分享-哔哩哔哩视频</a>，里面有一些开发板使用的按理可以看看怎么接线的</p>
+<h2 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h2><p>能够使用开发板调试电机，进而控制电机</p>
+<p>学习<a href="https://www.bilibili.com/video/BV1hQ4y167ri">【中科大RM电控合集】STM32CubeMX-GPIO输出电压_哔哩哔哩_bilibili</a> 电机控制</p>
+<p>使用STM32c8t6实操在调电机的同时</p>
+<h2 id="开发板知识"><a href="#开发板知识" class="headerlink" title="开发板知识"></a>开发板知识</h2><h3 id="电源树"><a href="#电源树" class="headerlink" title="电源树"></a>电源树</h3><p><strong>能量通道</strong> 和 <strong>信号通道</strong></p>
+<p>开发板通过 XT30 接收 12–24V电源，该能量一方面经板内 DCDC 供 MCU 与外设使用，另一方面通过 PC14&#x2F;PC13 控制的可控输出，将 XT30 的 24V 直接送至 CAN1 接口的 VCC_OUT1，用于给带驱动器的智能电机供电；CAN1 与 CAN3 本质上都只是通信接口，CAN 仅传递控制与状态信息，真正的电机驱动由电机内部驱动器利用 VCC_OUT1 提供的能量完成。</p>
+<p> <img src="D:\filp\珞珈\source\_posts\机器人\芯片渲染图.png" alt="芯片渲染图" style="zoom:38%;" /><img src="D:\filp\珞珈\source\_posts\机器人\电源树.png" alt="电源树" style="zoom:25%;" /></p>
+<h3 id="引脚"><a href="#引脚" class="headerlink" title="引脚"></a>引脚</h3><p>BOOT、SWD、CAN 引脚、时钟源、可控电源使能引脚</p>
+<p>时钟源：板子有外部 24MHz 晶振；Cube MX：选 HSE &#x3D; 24MHz，不要选内部 RC可控电源</p>
+<h3 id="CAN-通信"><a href="#CAN-通信" class="headerlink" title="CAN  通信"></a>CAN  通信</h3><p>CAN（control area network）理解起来按如下三层来理解</p>
+<p><strong>物理信号层</strong>：规定了硬件电路的设计规则、用户使用的接线方式、线路上传输信号与电平格式对应关系、波特率比特率、数据同步异步传输、收发模式等内容。</p>
+<p><strong>链路传输层</strong>：规定了地址（CAN ID）、冲突检测与避免（仲裁）、误码校验、滤波器与掩码、该层的帧格式。、</p>
+<p>在链路传输中，CAN通信标准帧（后面对CAN11位进行扩展有了扩展帧）分为了五个类，一次通讯只有发一帧：数据帧（发送数据）、遥控帧（该帧的ID指希望请求对应ID设备的数据）、错误帧、过载帧、帧间隔，其中后三者由硬件设备自动生成发送的</p>
+<p>每个帧还要细化分段，每段由对应的作用，</p>
+<p>如图是标准数据帧，在标准 CAN 数据帧中，用户可配置的主要字段包括基本 ID（表示这条“消息的类型 &#x2F; 优先级 ”）、RTR 位（一般默认为0，1是请求别人发数据）、数据长度（DLC，表示数据域的字节大小）以及数据域内容。其他字段如 IDE、保留位、CRC、ACK 和结束域均由 CAN 协议或硬件控制器自动处理，用户无需也不应手动修改。</p>
+<p><img src="D:\filp\珞珈\source_posts\机器人\标准数据帧.png" alt="标准数据帧"></p>
+<center><p>标准数据帧示意图</p></center>
+
+<p>各类帧的格式可以参考这个帖子：<a href="https://zhuanlan.zhihu.com/p/667572443">一文搞懂CAN总线协议帧格式 - 知乎</a> 以及这文件可知 <a href="test_can.xlsx">test_can.xlsx</a></p>
+<p>该帧里面的仲裁段由<code>11-bit ID + RTR （）</code> 构成，就记住一句话 0 压制 1 ，</p>
+<p><strong>应用数据层</strong>：是被传输的数据主体；链路层把应用层的数据拿来，加上相关的地址、校验等信息封装；物理层把链路层的数据拿来，编码成物理信号传输出去。</p>
+<p>接线方式：每个设备的CAN_H一一相连，CAN_L一一相连，而CAN_H与CAN_L间串联一个120 Ω,如下图所示<img src="D:\filp\珞珈\source\_posts\机器人\CAN总线接线方式.png" alt="CAN总线接线方式" style="zoom:50%;" /></p>
+<h3 id="USB-CDC"><a href="#USB-CDC" class="headerlink" title="USB CDC"></a>USB CDC</h3><p>USB CDC（Virtual COM Port，虚拟串口）作为开发阶段和上位机通信的，可以直连电脑的，而且可以当“串口”用，物理上是USB，逻辑上可以用作串口</p>
+<h2 id="开发板调试电机"><a href="#开发板调试电机" class="headerlink" title="开发板调试电机"></a>开发板调试电机</h2><p>疑问<code>CAN / FDCAN 是“干嘛的”</code></p>
+<ol>
+<li>使用stm32CubeMX和IDE配置环境</li>
+</ol>
+<p>MX直接生成程序的框架，往里面添加函数啥的，为了使调试电机更简单，我们可以下载串口绘图助手 serialplot <a href="https://zhuanlan.zhihu.com/p/664639656">https://zhuanlan.zhihu.com/p/664639656</a></p>
+<h2 id="补充知识："><a href="#补充知识：" class="headerlink" title="补充知识："></a>补充知识：</h2><h3 id="GPIO"><a href="#GPIO" class="headerlink" title="GPIO"></a>GPIO</h3><p>（无论输出还是输入，MCU 做的事永远只有一件：“在GPIO根线上，我拉不拉？往哪拉？拉多用力？）</p>
+<p>输入：<strong>浮空输入：MCU 内部既不拉高，也不拉低，引脚完全高阻态，读到的电平随机；上拉输入：MCU 内部通过一个“弱电阻”把引脚拉到 VDD，在外部没输入时，MCU默认读取高电平；下拉输入：MCU 内部通过弱电阻把引脚拉到 GND</strong></p>
+<p>输出：**推挽： 能主动拉高待驱动设备的引脚电平、也能主动拉低，开漏 ：只能主动拉低，拉高要靠外部（上拉）</p>
+<h2 id="stm32C8T6芯片实操"><a href="#stm32C8T6芯片实操" class="headerlink" title="stm32C8T6芯片实操"></a>stm32C8T6芯片实操</h2>
